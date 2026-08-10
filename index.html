@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Laundry Directory — Cari Laundry & Cleaning Terdekat</title>
   <meta name="description" content="Temukan laundry, cuci sepatu, home cleaning, cuci sofa, cuci karpet, dan berbagai jasa cleaning berdasarkan lokasi Anda.">
+  
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="./css/style.css">
 </head>
@@ -50,49 +52,68 @@
 
   <div class="toast" id="toast"></div>
 
+  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Module Script -->
   <script type="module">
     import { fetchActiveBusinesses, calculateDistance, getBasePath } from './js/business.js';
-import { initMap, updateMapMarkers, setMapCenter } from './js/map.js';
+    import { initMap, updateMapMarkers, setMapCenter } from './js/map.js';
 
-let allBusinesses = [];
-let userLocation = null;
-let currentCategory = "Semua";
+    let allBusinesses = [];
+    let userLocation = null;
+    let currentCategory = "Semua";
 
-document.addEventListener("DOMContentLoaded", async () => {
-  // 1. Inisialisasi Peta
-  initMap("map");
+    document.addEventListener("DOMContentLoaded", async () => {
+      // 1. Inisialisasi Peta Leaflet lebih dulu agar kanvas siap
+      try {
+        initMap("map");
+      } catch (err) {
+        console.error("Gagal inisialisasi peta Leaflet:", err);
+      }
 
-  setupEventListeners();
+      setupEventListeners();
 
-  // 2. Ambil Data Usaha
-  await loadData();
-});
+      // 2. Ambil data bisnis dari Firebase Firestore
+      await loadData();
+    });
 
-async function loadData() {
-  const listEl = document.getElementById("business-list");
-  try {
-    allBusinesses = await fetchActiveBusinesses();
-    applyFilters();
-  } catch (err) {
-    console.error("Error loading businesses:", err);
-    listEl.innerHTML = `<div class="empty-state"><p>Gagal memuat data usaha.</p></div>`;
-  }
-}
+    async function loadData() {
+      const listEl = document.getElementById("business-list");
 
-function applyFilters() {
-  const kw = document.getElementById("search-input").value.toLowerCase().trim();
-  const filtered = allBusinesses.filter(b => {
-    const matchCat = currentCategory === "Semua" || b.category === currentCategory;
-    const target = `${b.name} ${b.category} ${b.address} ${b.city} ${b.province}`.toLowerCase();
-    return matchCat && (!kw || target.includes(kw));
-  });
+      // Menyiapkan timeout 8 detik agar UI tidak gantung jika koneksi gantung
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Koneksi ke Firestore mengalami batas waktu (timeout).")), 8000)
+      );
 
-  renderList(filtered);
-  
-  // Render Marker Pin di Peta
-  updateMapMarkers(filtered);
-}
+      try {
+        allBusinesses = await Promise.race([fetchActiveBusinesses(), timeoutPromise]);
+        applyFilters();
+      } catch (err) {
+        console.error("Firebase fetch error:", err);
+        listEl.innerHTML = `
+          <div class="empty-state">
+            <p><strong>Gagal memuat data dari database.</strong></p>
+            <p><small>${err.message || 'Periksa aturan Firestore atau jaringan Anda.'}</small></p>
+            <button class="btn btn-primary" onclick="location.reload()" style="margin-top:10px;">Coba Lagi</button>
+          </div>
+        `;
+      }
+    }
+
+    function applyFilters() {
+      const kw = document.getElementById("search-input").value.toLowerCase().trim();
+      const filtered = allBusinesses.filter(b => {
+        const matchCat = currentCategory === "Semua" || b.category === currentCategory;
+        const target = `${b.name} ${b.category} ${b.address} ${b.city} ${b.province}`.toLowerCase();
+        return matchCat && (!kw || target.includes(kw));
+      });
+
+      renderList(filtered);
+      
+      // Render marker pin di peta Leaflet
+      updateMapMarkers(filtered);
+    }
 
     function renderList(businesses) {
       const listEl = document.getElementById("business-list");
@@ -127,7 +148,10 @@ function applyFilters() {
     }
 
     function setupEventListeners() {
+      // Pencarian kata kunci
       document.getElementById("search-input").addEventListener("input", applyFilters);
+
+      // Filter kategori
       document.querySelectorAll(".chip").forEach(chip => {
         chip.onclick = (e) => {
           document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
@@ -137,15 +161,19 @@ function applyFilters() {
         };
       });
 
+      // Deteksi lokasi pengguna
       document.getElementById("btn-my-location").onclick = () => {
-        if (!navigator.geolocation) return alert("Browser tidak mendukung lokasi.");
+        if (!navigator.geolocation) {
+          alert("Browser Anda tidak mendukung fitur Geolocation.");
+          return;
+        }
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            setMapCenter(userLocation.lat, userLocation.lng);
+            setMapCenter(userLocation.lat, userLocation.lng, 14);
             applyFilters();
           },
-          () => alert("Lokasi Anda tidak dapat diakses.")
+          () => alert("Akses lokasi ditolak atau tidak dapat ditemukan. Anda tetap dapat menggunakan peta secara manual.")
         );
       };
     }
