@@ -9,6 +9,26 @@
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="./css/style.css">
+  <style>
+    #map {
+      width: 100% !important;
+      height: 400px !important;
+      min-height: 350px !important;
+      display: block !important;
+      background-color: #cbd5e1 !important;
+      z-index: 1;
+    }
+    @media (min-width: 768px) {
+      .main-container {
+        display: flex !important;
+        flex-direction: row !important;
+        height: calc(100vh - 160px) !important;
+      }
+      #map {
+        height: 100% !important;
+      }
+    }
+  </style>
 </head>
 <body>
 
