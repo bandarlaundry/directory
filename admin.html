@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard — Laundry Directory</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
   <style>
     .admin-grid { max-width: 1200px; margin: 1.5rem auto; padding: 0 1rem; display: grid; grid-template-columns: 1fr; gap: 2rem; }
     @media (min-width: 768px) { .admin-grid { grid-template-columns: 1fr 1fr; } }
@@ -21,9 +21,9 @@
 
   <header class="app-header">
     <div class="brand">
-      <h1><a href="/">Laundry Directory Admin</a></h1>
+      <h1><a href="./">Laundry Directory Admin</a></h1>
     </div>
-    <a href="/" class="btn btn-secondary">🌐 Ke Tampilan Utama</a>
+    <a href="./" class="btn btn-secondary">🌐 Ke Tampilan Utama</a>
   </header>
 
   <main class="admin-grid">
@@ -150,8 +150,8 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module">
-    import { db } from '/js/firebase-config.js';
-    import { createSlug } from '/js/business.js';
+    import { db } from './js/firebase-config.js';
+    import { createSlug, getBasePath } from './js/business.js';
     import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     let pickerMap, pickerMarker;
@@ -227,12 +227,13 @@
       const tbody = document.getElementById("admin-table");
       tbody.innerHTML = `<tr><td colspan="3">Memuat data...</td></tr>`;
 
+      const basePath = getBasePath();
       const snap = await getDocs(collection(db, "businesses"));
       tbody.innerHTML = "";
 
       snap.forEach(docSnap => {
         const b = { id: docSnap.id, ...docSnap.data() };
-        const url = `/${b.categorySlug || 'laundry'}/${b.citySlug || 'lokasi'}/${b.slug}`;
+        const url = `${basePath}/${b.categorySlug || 'laundry'}/${b.citySlug || 'lokasi'}/${b.slug}`;
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
