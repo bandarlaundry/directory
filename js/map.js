@@ -7,16 +7,18 @@ export function initMap(elementId, center = [-6.4025, 106.9680], zoom = 11) {
   const mapElement = document.getElementById(elementId);
   if (!mapElement) return null;
 
-  // Hapus instance peta lama jika ada
+  // Bersihkan instance lama jika ada
   if (map !== null) {
     map.remove();
     map = null;
   }
 
+  // Inisialisasi Map
   map = L.map(elementId, {
     scrollWheelZoom: true
   }).setView(center, zoom);
 
+  // Gunakan Tile OpenStreetMap
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap'
@@ -24,9 +26,9 @@ export function initMap(elementId, center = [-6.4025, 106.9680], zoom = 11) {
 
   markersGroup = L.layerGroup().addTo(map);
 
-  // Paksa Leaflet recalculate ukuran peta
+  // Paksa render ulang ukuran canvas peta
   setTimeout(() => {
-    map.invalidateSize();
+    if (map) map.invalidateSize();
   }, 300);
 
   return map;
@@ -37,20 +39,21 @@ export function updateMapMarkers(businesses) {
 
   markersGroup.clearLayers();
   const basePath = getBasePath();
-  const validLatLngs = [];
+  const validBounds = [];
 
   businesses.forEach(b => {
     const lat = parseFloat(b.latitude);
     const lng = parseFloat(b.longitude);
 
-    if (!isNaN(lat) && !isNaN(lng)) {
-      validLatLngs.push([lat, lng]);
+    // Pastikan koordinat angka valid
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+      validBounds.push([lat, lng]);
 
-      // Buat Marker Pin
+      // Buat Marker Leaflet Pin
       const marker = L.marker([lat, lng]);
       const detailUrl = `${basePath}/${b.categorySlug || 'laundry'}/${b.citySlug || 'lokasi'}/${b.slug}`;
 
-      const popupContent = `
+      const popupHtml = `
         <div style="font-size:13px; line-height:1.4; padding:2px;">
           <strong style="color:#0284c7; font-size:14px;">${b.name}</strong><br>
           <span style="color:#64748b;">${b.category}</span><br>
@@ -59,20 +62,20 @@ export function updateMapMarkers(businesses) {
         </div>
       `;
 
-      marker.bindPopup(popupContent);
+      marker.bindPopup(popupHtml);
       markersGroup.addLayer(marker);
     }
   });
 
-  // Jika ada marker, pautkan view peta secara otomatis agar semua marker terlihat
-  if (validLatLngs.length > 0) {
-    const bounds = L.latLngBounds(validLatLngs);
+  // Otomatis arahkan pandangan peta ke seluruh marker yang ada
+  if (validBounds.length > 0) {
+    const bounds = L.latLngBounds(validBounds);
     map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
   }
 
-  // Refresh rendering tile peta
+  // Refresh kanvas peta
   setTimeout(() => {
-    map.invalidateSize();
+    if (map) map.invalidateSize();
   }, 200);
 }
 
