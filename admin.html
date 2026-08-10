@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — Laundry Directory</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .admin-grid { max-width: 1200px; margin: 1.5rem auto; padding: 0 1rem; display: grid; grid-template-columns: 1fr; gap: 2rem; }
+    @media (min-width: 768px) { .admin-grid { grid-template-columns: 1fr 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.8rem; }
+    .form-group input, .form-group select, .form-group textarea { padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px; }
+    #picker-map { height: 220px; width: 100%; border-radius: 8px; margin-top: 0.3rem; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+    th { background: #f1f5f9; }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="brand">
+      <h1><a href="/">Laundry Directory Admin</a></h1>
+    </div>
+    <a href="/" class="btn btn-secondary">🌐 Ke Tampilan Utama</a>
+  </header>
+
+  <main class="admin-grid">
+    <section style="background:white; padding:1.25rem; border-radius:var(--radius); border:1px solid var(--border);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h2 id="form-title" style="font-size:1.1rem;">Tambah Usaha Baru</h2>
+        <button id="seed-btn" class="btn btn-secondary" style="font-size:0.75rem;">🌱 Seed 15 Data Dummy</button>
+      </div>
+
+      <form id="admin-form">
+        <input type="hidden" id="business-id">
+        <div class="form-group">
+          <label>Nama Usaha</label>
+          <input type="text" id="name" required placeholder="Bandar Laundry">
+        </div>
+        <div class="form-group">
+          <label>Auto SEO Slug</label>
+          <input type="text" id="slug" required placeholder="bandar-laundry" readonly style="background:#f1f5f9;">
+        </div>
+        <div class="form-group">
+          <label>Kategori</label>
+          <select id="category" required>
+            <option value="Laundry Kiloan" data-slug="laundry">Laundry Kiloan</option>
+            <option value="Laundry Satuan" data-slug="laundry">Laundry Satuan</option>
+            <option value="Laundry Express" data-slug="laundry">Laundry Express</option>
+            <option value="Cuci Sepatu" data-slug="cuci-sepatu">Cuci Sepatu</option>
+            <option value="Cuci Sofa" data-slug="cuci-sofa">Cuci Sofa</option>
+            <option value="Cuci Kasur" data-slug="cuci-kasur">Cuci Kasur</option>
+            <option value="Cuci Karpet" data-slug="cuci-karpet">Cuci Karpet</option>
+            <option value="Home Cleaning" data-slug="home-cleaning">Home Cleaning</option>
+            <option value="Office Cleaning" data-slug="office-cleaning">Office Cleaning</option>
+            <option value="Cleaning Service" data-slug="cleaning-service">Cleaning Service</option>
+            <option value="Car Wash" data-slug="car-wash">Car Wash</option>
+            <option value="Jasa Cleaning Lainnya" data-slug="cleaning">Jasa Cleaning Lainnya</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Deskripsi Usaha</label>
+          <textarea id="description" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Alamat Jalan</label>
+          <input type="text" id="address" required>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+          <div class="form-group">
+            <label>Kota</label>
+            <input type="text" id="city" required placeholder="Bogor">
+          </div>
+          <div class="form-group">
+            <label>Provinsi</label>
+            <input type="text" id="province" required placeholder="Jawa Barat">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Pilih Lokasi di Peta (Klik pada lokasi)</label>
+          <div id="picker-map"></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+          <div class="form-group">
+            <label>Latitude</label>
+            <input type="number" step="any" id="latitude" required readonly>
+          </div>
+          <div class="form-group">
+            <label>Longitude</label>
+            <input type="number" step="any" id="longitude" required readonly>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+          <div class="form-group">
+            <label>Telepon</label>
+            <input type="text" id="phone">
+          </div>
+          <div class="form-group">
+            <label>WhatsApp</label>
+            <input type="text" id="whatsapp" required placeholder="085712345678">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+          <div class="form-group">
+            <label>Jam Operasional</label>
+            <input type="text" id="openingHours" placeholder="08:00 - 20:00">
+          </div>
+          <div class="form-group">
+            <label>Status Usaha</label>
+            <select id="status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>URL Image/Logo</label>
+          <input type="url" id="imageUrl" placeholder="https://...">
+        </div>
+
+        <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+          <button type="submit" class="btn btn-primary" style="flex:1;">Simpan Firestore</button>
+          <button type="button" id="reset-btn" class="btn btn-secondary">Batal</button>
+        </div>
+      </form>
+    </section>
+
+    <section>
+      <h2 style="font-size:1.1rem; margin-bottom:1rem;">Daftar Data Usaha</h2>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama & SEO URL</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="admin-table"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module">
+    import { db } from '/js/firebase-config.js';
+    import { createSlug } from '/js/business.js';
+    import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    let pickerMap, pickerMarker;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initPickerMap();
+      loadAdminTable();
+
+      document.getElementById("name").addEventListener("input", (e) => {
+        document.getElementById("slug").value = createSlug(e.target.value);
+      });
+
+      document.getElementById("admin-form").onsubmit = handleSave;
+      document.getElementById("reset-btn").onclick = resetForm;
+      document.getElementById("seed-btn").onclick = seedDummyData;
+    });
+
+    function initPickerMap() {
+      pickerMap = L.map("picker-map").setView([-6.4025, 106.9680], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(pickerMap);
+
+      pickerMap.on("click", (e) => {
+        const { lat, lng } = e.latlng;
+        document.getElementById("latitude").value = lat;
+        document.getElementById("longitude").value = lng;
+
+        if (pickerMarker) pickerMap.removeLayer(pickerMarker);
+        pickerMarker = L.marker([lat, lng]).addTo(pickerMap);
+      });
+    }
+
+    async function handleSave(e) {
+      e.preventDefault();
+      const id = document.getElementById("business-id").value;
+      const catSelect = document.getElementById("category");
+      const selectedOption = catSelect.options[catSelect.selectedIndex];
+
+      const payload = {
+        name: document.getElementById("name").value,
+        slug: document.getElementById("slug").value,
+        category: catSelect.value,
+        categorySlug: selectedOption.dataset.slug || 'laundry',
+        description: document.getElementById("description").value,
+        address: document.getElementById("address").value,
+        city: document.getElementById("city").value,
+        citySlug: createSlug(document.getElementById("city").value),
+        province: document.getElementById("province").value,
+        provinceSlug: createSlug(document.getElementById("province").value),
+        latitude: parseFloat(document.getElementById("latitude").value),
+        longitude: parseFloat(document.getElementById("longitude").value),
+        phone: document.getElementById("phone").value,
+        whatsapp: document.getElementById("whatsapp").value,
+        openingHours: document.getElementById("openingHours").value,
+        status: document.getElementById("status").value,
+        imageUrl: document.getElementById("imageUrl").value,
+        updatedAt: serverTimestamp()
+      };
+
+      if (id) {
+        await updateDoc(doc(db, "businesses", id), payload);
+        alert("Data diperbarui!");
+      } else {
+        payload.createdAt = serverTimestamp();
+        await addDoc(collection(db, "businesses"), payload);
+        alert("Usaha baru disimpan!");
+      }
+
+      resetForm();
+      loadAdminTable();
+    }
+
+    async function loadAdminTable() {
+      const tbody = document.getElementById("admin-table");
+      tbody.innerHTML = `<tr><td colspan="3">Memuat data...</td></tr>`;
+
+      const snap = await getDocs(collection(db, "businesses"));
+      tbody.innerHTML = "";
+
+      snap.forEach(docSnap => {
+        const b = { id: docSnap.id, ...docSnap.data() };
+        const url = `/${b.categorySlug || 'laundry'}/${b.citySlug || 'lokasi'}/${b.slug}`;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <strong>${b.name}</strong><br>
+            <small style="color:var(--primary);">${url}</small>
+          </td>
+          <td><span class="badge">${b.status}</span></td>
+          <td>
+            <button class="btn btn-secondary" style="padding:2px 6px; font-size:0.75rem;" id="edit-${b.id}">Edit</button>
+            <button class="btn btn-danger" style="padding:2px 6px; font-size:0.75rem;" id="del-${b.id}">Hapus</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        setTimeout(() => {
+          document.getElementById(`edit-${b.id}`).onclick = () => {
+            document.getElementById("business-id").value = b.id;
+            document.getElementById("name").value = b.name;
+            document.getElementById("slug").value = b.slug;
+            document.getElementById("category").value = b.category;
+            document.getElementById("description").value = b.description || '';
+            document.getElementById("address").value = b.address;
+            document.getElementById("city").value = b.city;
+            document.getElementById("province").value = b.province;
+            document.getElementById("latitude").value = b.latitude;
+            document.getElementById("longitude").value = b.longitude;
+            document.getElementById("phone").value = b.phone || '';
+            document.getElementById("whatsapp").value = b.whatsapp;
+            document.getElementById("openingHours").value = b.openingHours || '';
+            document.getElementById("status").value = b.status;
+            document.getElementById("imageUrl").value = b.imageUrl || '';
+
+            if (pickerMarker) pickerMap.removeLayer(pickerMarker);
+            pickerMarker = L.marker([b.latitude, b.longitude]).addTo(pickerMap);
+            pickerMap.setView([b.latitude, b.longitude], 14);
+            document.getElementById("form-title").innerText = "Edit Usaha";
+          };
+
+          document.getElementById(`del-${b.id}`).onclick = async () => {
+            if(confirm("Hapus data ini?")) {
+              await deleteDoc(doc(db, "businesses", b.id));
+              loadAdminTable();
+            }
+          };
+        }, 0);
+      });
+    }
+
+    function resetForm() {
+      document.getElementById("admin-form").reset();
+      document.getElementById("business-id").value = "";
+      document.getElementById("form-title").innerText = "Tambah Usaha Baru";
+      if (pickerMarker) pickerMap.removeLayer(pickerMarker);
+    }
+
+    async function seedDummyData() {
+      const dummy = [
+        { name: "Bandar Laundry", category: "Laundry Kiloan", categorySlug: "laundry", city: "Bogor", citySlug: "bogor", address: "Jl. Raya Cileungsi No. 12", province: "Jawa Barat", provinceSlug: "jawa-barat", latitude: -6.4025, longitude: 106.9680, whatsapp: "085712345601", status: "active" },
+        { name: "Sneakers Clean Cibubur", category: "Cuci Sepatu", categorySlug: "cuci-sepatu", city: "Depok", citySlug: "depok", address: "Jl. Transyogi KM 3", province: "Jawa Barat", provinceSlug: "jawa-barat", latitude: -6.3725, longitude: 106.9020, whatsapp: "085712345602", status: "active" },
+        { name: "Express Clean 24h", category: "Laundry Express", categorySlug: "laundry", city: "Bogor", citySlug: "bogor", address: "Jl. Pajajaran No. 45", province: "Jawa Barat", provinceSlug: "jawa-barat", latitude: -6.5950, longitude: 106.8050, whatsapp: "085712345603", status: "active" },
+        { name: "Sofa Hygiene Solutions", category: "Cuci Sofa", categorySlug: "cuci-sofa", city: "Depok", citySlug: "depok", address: "Jl. Margonda Raya No. 100", province: "Jawa Barat", provinceSlug: "jawa-barat", latitude: -6.3900, longitude: 106.8300, whatsapp: "085712345604", status: "active" },
+        { name: "Glow Car Wash", category: "Car Wash", categorySlug: "car-wash", city: "Bekasi", citySlug: "bekasi", address: "Jl. Kartini No. 22", province: "Jawa Barat", provinceSlug: "jawa-barat", latitude: -6.2400, longitude: 106.9900, whatsapp: "085712345605", status: "active" },
+        { name: "Home Clean Pro", category: "Home Cleaning", categorySlug: "home-cleaning", city: "Jakarta Selatan", citySlug: "jakarta-selatan", address: "Jl. Sudirman No. 88", province: "DKI Jakarta", provinceSlug: "dki-jakarta", latitude: -6.2100, longitude: 106.8200, whatsapp: "085712345606", status: "active" },
+        { name: "Kasur Steril Nusantara", category: "Cuci Kasur", categorySlug: "cuci-kasur", city: "Jakarta Utara", citySlug: "jakarta-utara", address: "Jl. Boulevard Barat", province: "DKI Jakarta", provinceSlug: "dki-jakarta", latitude: -6.1500, longitude: 106.8900, whatsapp: "085712345607", status: "active" },
+        { name: "Karpet Masjid Clean", category: "Cuci Karpet", categorySlug: "cuci-karpet", city: "Bogor", citySlug: "bogor", address: "Jl. Pahlawan No. 15", province: "Jawa Barat", provinceSlug: "jawa-barat", latitude: -6.6000, longitude: 106.7900, whatsapp: "085712345608", status: "active" },
+        { name: "Royal Satuan Wash", category: "Laundry Satuan", categorySlug: "laundry", city: "Jakarta Selatan", citySlug: "jakarta-selatan", address: "Jl. Kemang Raya No. 10", province: "DKI Jakarta", provinceSlug: "dki-jakarta", latitude: -6.2600, longitude: 106.8150, whatsapp: "085712345609", status: "active" },
+        { name: "Office Shine Care", category: "Office Cleaning", categorySlug: "office-cleaning", city: "Jakarta Selatan", citySlug: "jakarta-selatan", address: "Jl. TB Simatupang No. 50", province: "DKI Jakarta", provinceSlug: "dki-jakarta", latitude: -6.3000, longitude: 106.8400, whatsapp: "085712345610", status: "active" },
+        { name: "Cileungsi Hygiene", category: "Cleaning Service", categorySlug: "cleaning-service", city: "Bogor", citySlug: "bogor", address: "Jl. Narogong No. 8", province: "Jawa Barat", provinceSlug: "jawa-barat", latitude: -6.4100, longitude: 106.9500, whatsapp: "085712345611", status: "active" },
+        { name: "Kinclong Kiloan Fresh", category: "Laundry Kiloan", categorySlug: "laundry", city: "Bekasi", citySlug: "bekasi", address: "Jl. Alternatif Cibubur", province: "Jawa Barat", provinceSlug: "jawa-barat", latitude: -6.3800, longitude: 106.9200, whatsapp: "085712345612", status: "active" },
+        { name: "Hydro Clean Bed", category: "Cuci Sofa", categorySlug: "cuci-sofa", city: "Depok", citySlug: "depok", address: "Jl. Akses UI No. 12", province: "Jawa Barat", provinceSlug: "jawa-barat", latitude: -6.3500, longitude: 106.8400, whatsapp: "085712345613", status: "active" },
+        { name: "Auto Clean Steam Wash", category: "Car Wash", categorySlug: "car-wash", city: "Bogor", citySlug: "bogor", address: "Jl. Sholeh Iskandar No. 3", province: "Jawa Barat", provinceSlug: "jawa-barat", latitude: -6.5600, longitude: 106.7800, whatsapp: "085712345614", status: "active" },
+        { name: "Bersih Total Facility", category: "Jasa Cleaning Lainnya", categorySlug: "cleaning", city: "Bekasi", citySlug: "bekasi", address: "Jl. Ahmad Yani No. 88", province: "Jawa Barat", provinceSlug: "jawa-barat", latitude: -6.2300, longitude: 106.9800, whatsapp: "085712345615", status: "active" }
+      ];
+
+      alert("Menanamkan 15 Data Dummy dengan Slug SEO...");
+      for (const item of dummy) {
+        await addDoc(collection(db, "businesses"), {
+          ...item,
+          slug: createSlug(item.name),
+          description: "Layanan kebersihan profesional dan cepat.",
+          openingHours: "08:00 - 20:00",
+          phone: item.whatsapp,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+      alert("Berhasil!");
+      loadAdminTable();
+    }
+  </script>
+</body>
+</html>
