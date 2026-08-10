@@ -7,18 +7,18 @@ export function initMap(elementId, center = [-6.4025, 106.9680], zoom = 11) {
   const mapElement = document.getElementById(elementId);
   if (!mapElement) return null;
 
-  // Bersihkan instance lama jika ada
+  // Hapus map lama jika re-init
   if (map !== null) {
     map.remove();
     map = null;
   }
 
-  // Inisialisasi Map
+  // Inisialisasi Leaflet Map
   map = L.map(elementId, {
     scrollWheelZoom: true
   }).setView(center, zoom);
 
-  // Gunakan Tile OpenStreetMap
+  // Pasang Tile Layer OpenStreetMap
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap'
@@ -26,10 +26,9 @@ export function initMap(elementId, center = [-6.4025, 106.9680], zoom = 11) {
 
   markersGroup = L.layerGroup().addTo(map);
 
-  // Paksa render ulang ukuran canvas peta
-  setTimeout(() => {
-    if (map) map.invalidateSize();
-  }, 300);
+  // Paksa render ulang dua kali untuk menangani pencetakan layar lambat
+  setTimeout(() => { if (map) map.invalidateSize(); }, 100);
+  setTimeout(() => { if (map) map.invalidateSize(); }, 600);
 
   return map;
 }
@@ -45,11 +44,9 @@ export function updateMapMarkers(businesses) {
     const lat = parseFloat(b.latitude);
     const lng = parseFloat(b.longitude);
 
-    // Pastikan koordinat angka valid
     if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
       validBounds.push([lat, lng]);
 
-      // Buat Marker Leaflet Pin
       const marker = L.marker([lat, lng]);
       const detailUrl = `${basePath}/${b.categorySlug || 'laundry'}/${b.citySlug || 'lokasi'}/${b.slug}`;
 
@@ -67,16 +64,13 @@ export function updateMapMarkers(businesses) {
     }
   });
 
-  // Otomatis arahkan pandangan peta ke seluruh marker yang ada
+  // Zoom & Pusatkan ke seluruh titik pin yang ada
   if (validBounds.length > 0) {
     const bounds = L.latLngBounds(validBounds);
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
   }
 
-  // Refresh kanvas peta
-  setTimeout(() => {
-    if (map) map.invalidateSize();
-  }, 200);
+  setTimeout(() => { if (map) map.invalidateSize(); }, 300);
 }
 
 export function setMapCenter(lat, lng, zoom = 15) {
