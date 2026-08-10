@@ -6,7 +6,7 @@
   <title>Laundry Directory — Cari Laundry & Cleaning Terdekat</title>
   <meta name="description" content="Temukan laundry, cuci sepatu, home cleaning, cuci sofa, cuci karpet, dan berbagai jasa cleaning berdasarkan lokasi Anda.">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
 
@@ -15,7 +15,7 @@
       <h1><a href="/">Laundry Directory V1.0</a></h1>
       <p>Temukan laundry & jasa cleaning terdekat.</p>
     </div>
-    <a href="/admin.html" class="btn btn-secondary">🛠️ Admin</a>
+    <a href="./admin.html" class="btn btn-secondary">🛠️ Admin</a>
   </header>
 
   <section class="controls-section">
@@ -50,8 +50,8 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module">
-    import { fetchActiveBusinesses, calculateDistance } from '/js/business.js';
-    import { initMap, updateMapMarkers, setMapCenter } from '/js/map.js';
+    import { fetchActiveBusinesses, calculateDistance } from './js/business.js';
+    import { initMap, updateMapMarkers, setMapCenter } from './js/map.js';
 
     let allBusinesses = [];
     let userLocation = null;
