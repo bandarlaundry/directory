@@ -53,60 +53,46 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module">
     import { fetchActiveBusinesses, calculateDistance, getBasePath } from './js/business.js';
-    import { initMap, updateMapMarkers, setMapCenter } from './js/map.js';
+import { initMap, updateMapMarkers, setMapCenter } from './js/map.js';
 
-    let allBusinesses = [];
-    let userLocation = null;
-    let currentCategory = "Semua";
+let allBusinesses = [];
+let userLocation = null;
+let currentCategory = "Semua";
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      // 1. INSIALISASI PETA LEBIH DAHULU (PASTIKAN PETA PASTI MUNCUL)
-      try {
-        initMap("map");
-      } catch(err) {
-        console.error("Gagal inisialisasi peta:", err);
-      }
+document.addEventListener("DOMContentLoaded", async () => {
+  // 1. Inisialisasi Peta
+  initMap("map");
 
-      setupEventListeners();
+  setupEventListeners();
 
-      // 2. AMBIL DATA DARI FIREBASE (DENGAN TIMEOUT LOGIC)
-      await loadData();
-    });
+  // 2. Ambil Data Usaha
+  await loadData();
+});
 
-    async function loadData() {
-      const listEl = document.getElementById("business-list");
-      
-      // Setting Timeout 10 Detik agar tidak menggantung selamanya
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Koneksi Firebase Timeout")), 10000)
-      );
+async function loadData() {
+  const listEl = document.getElementById("business-list");
+  try {
+    allBusinesses = await fetchActiveBusinesses();
+    applyFilters();
+  } catch (err) {
+    console.error("Error loading businesses:", err);
+    listEl.innerHTML = `<div class="empty-state"><p>Gagal memuat data usaha.</p></div>`;
+  }
+}
 
-      try {
-        allBusinesses = await Promise.race([fetchActiveBusinesses(), timeoutPromise]);
-        applyFilters();
-      } catch (err) {
-        console.error("Firebase Error:", err);
-        listEl.innerHTML = `
-          <div class="empty-state">
-            <p>⚠️ <strong>Gagal memuat data dari Firebase.</strong></p>
-            <p><small>${err.message || 'Periksa koneksi internet atau Firestore Rules.'}</small></p>
-            <button class="btn btn-primary" onclick="location.reload()" style="margin-top:10px;">Coba Lagi</button>
-          </div>
-        `;
-      }
-    }
+function applyFilters() {
+  const kw = document.getElementById("search-input").value.toLowerCase().trim();
+  const filtered = allBusinesses.filter(b => {
+    const matchCat = currentCategory === "Semua" || b.category === currentCategory;
+    const target = `${b.name} ${b.category} ${b.address} ${b.city} ${b.province}`.toLowerCase();
+    return matchCat && (!kw || target.includes(kw));
+  });
 
-    function applyFilters() {
-      const kw = document.getElementById("search-input").value.toLowerCase().trim();
-      const filtered = allBusinesses.filter(b => {
-        const matchCat = currentCategory === "Semua" || b.category === currentCategory;
-        const target = `${b.name} ${b.category} ${b.address} ${b.city} ${b.province}`.toLowerCase();
-        return matchCat && (!kw || target.includes(kw));
-      });
-
-      renderList(filtered);
-      updateMapMarkers(filtered);
-    }
+  renderList(filtered);
+  
+  // Render Marker Pin di Peta
+  updateMapMarkers(filtered);
+}
 
     function renderList(businesses) {
       const listEl = document.getElementById("business-list");
