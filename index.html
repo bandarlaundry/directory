@@ -84,19 +84,24 @@
     let userLocation = null;
     let currentCategory = "Semua";
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      // 1. Inisialisasi Peta Leaflet lebih dulu agar kanvas siap
-      try {
-        initMap("map");
-      } catch (err) {
-        console.error("Gagal inisialisasi peta Leaflet:", err);
-      }
+   document.addEventListener("DOMContentLoaded", async () => {
+  // 1. Inisialisasi Peta
+  try {
+    initMap("map");
+  } catch (err) {
+    console.error("Gagal inisialisasi peta Leaflet:", err);
+  }
 
-      setupEventListeners();
+  // 2. PAKSA LEAFLET MENGHITUNG ULANG UKURAN KANVAS
+  setTimeout(() => {
+    window.dispatchEvent(new Event('resize'));
+  }, 500);
 
-      // 2. Ambil data bisnis dari Firebase Firestore
-      await loadData();
-    });
+  setupEventListeners();
+
+  // 3. Ambil data bisnis dari Firebase Firestore
+  await loadData();
+});
 
     async function loadData() {
       const listEl = document.getElementById("business-list");
