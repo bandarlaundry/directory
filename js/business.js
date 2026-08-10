@@ -1,17 +1,26 @@
 import { db } from './firebase-config.js';
 import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Generator Slug SEO-Friendly
-export function createSlug(text) {
-  return text.toString().toLowerCase().trim()
-    .replace(/\s+/g, '-')           // Ganti spasi dengan -
-    .replace(/[^\w\-]+/g, '')       // Hapus karakter non-alphanumeric
-    .replace(/\-\-+/g, '-')         // Ganti multipel - menjadi satu -
-    .replace(/^-+/, '')             // Trim - dari awal
-    .replace(/-+$/, '');            // Trim - dari akhir
+// Utility Dapatkan Base Path (misal /directory)
+export function getBasePath() {
+  const path = window.location.pathname;
+  if (path.startsWith('/directory')) {
+    return '/directory';
+  }
+  return '';
 }
 
-// Haversine Distance Formula (km)
+// Generator Slug SEO
+export function createSlug(text) {
+  return text.toString().toLowerCase().trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+}
+
+// Haversine Distance (km)
 export function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -22,7 +31,7 @@ export function calculateDistance(lat1, lon1, lat2, lon2) {
   return (R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)))).toFixed(1);
 }
 
-// Fetch Active Businesses untuk Halaman Utama
+// Fetch Usaha Aktif
 export async function fetchActiveBusinesses() {
   const q = query(collection(db, "businesses"), where("status", "==", "active"));
   const snap = await getDocs(q);
@@ -31,7 +40,7 @@ export async function fetchActiveBusinesses() {
   return results;
 }
 
-// Fetch Single Business berdasarkan Slug
+// Fetch Usaha by Slug
 export async function fetchBusinessBySlug(slug) {
   const q = query(collection(db, "businesses"), where("slug", "==", slug));
   const snap = await getDocs(q);
