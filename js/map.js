@@ -1,3 +1,5 @@
+import { getBasePath } from './business.js';
+
 let map = null;
 let markersGroup = null;
 
@@ -16,10 +18,12 @@ export function updateMapMarkers(businesses) {
   if (!markersGroup) return;
   markersGroup.clearLayers();
 
+  const basePath = getBasePath();
+
   businesses.forEach(b => {
     if (b.latitude && b.longitude) {
       const marker = L.marker([b.latitude, b.longitude]);
-      const detailUrl = `/${b.categorySlug || 'laundry'}/${b.citySlug || 'lokasi'}/${b.slug}`;
+      const detailUrl = `${basePath}/${b.categorySlug || 'laundry'}/${b.citySlug || 'lokasi'}/${b.slug}`;
 
       marker.bindPopup(`
         <div style="font-size:13px; line-height:1.4;">
