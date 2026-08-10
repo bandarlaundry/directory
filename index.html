@@ -42,7 +42,9 @@
   </section>
 
   <main class="main-container">
-    <section class="list-container" id="business-list"></section>
+    <section class="list-container" id="business-list">
+      <div class="loading-state">Memuat data dari database...</div>
+    </section>
     <section id="map"></section>
   </main>
 
@@ -58,19 +60,39 @@
     let currentCategory = "Semua";
 
     document.addEventListener("DOMContentLoaded", async () => {
-      initMap("map");
+      // 1. INSIALISASI PETA LEBIH DAHULU (PASTIKAN PETA PASTI MUNCUL)
+      try {
+        initMap("map");
+      } catch(err) {
+        console.error("Gagal inisialisasi peta:", err);
+      }
+
       setupEventListeners();
+
+      // 2. AMBIL DATA DARI FIREBASE (DENGAN TIMEOUT LOGIC)
       await loadData();
     });
 
     async function loadData() {
       const listEl = document.getElementById("business-list");
-      listEl.innerHTML = `<div class="loading-state">Memuat data Laundry Directory...</div>`;
+      
+      // Setting Timeout 10 Detik agar tidak menggantung selamanya
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Koneksi Firebase Timeout")), 10000)
+      );
+
       try {
-        allBusinesses = await fetchActiveBusinesses();
+        allBusinesses = await Promise.race([fetchActiveBusinesses(), timeoutPromise]);
         applyFilters();
       } catch (err) {
-        listEl.innerHTML = `<div class="empty-state">Gagal memuat data dari database.</div>`;
+        console.error("Firebase Error:", err);
+        listEl.innerHTML = `
+          <div class="empty-state">
+            <p>⚠️ <strong>Gagal memuat data dari Firebase.</strong></p>
+            <p><small>${err.message || 'Periksa koneksi internet atau Firestore Rules.'}</small></p>
+            <button class="btn btn-primary" onclick="location.reload()" style="margin-top:10px;">Coba Lagi</button>
+          </div>
+        `;
       }
     }
 
@@ -92,7 +114,7 @@
       const basePath = getBasePath();
 
       if (businesses.length === 0) {
-        listEl.innerHTML = `<div class="empty-state"><p>Usaha tidak ditemukan.</p></div>`;
+        listEl.innerHTML = `<div class="empty-state"><p>Tidak ada data usaha ditemukan.</p></div>`;
         return;
       }
 
